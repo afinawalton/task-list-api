@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import os
 from dotenv import load_dotenv
-from routes import tasks_bp
+from .routes import tasks_bp
 
 
 db = SQLAlchemy()
