@@ -12,14 +12,44 @@ def get_tasks():
     tasks = Task.query.all()
     tasks_response = []
 
+    # If user has given us a query param
+    # Get queries to sort by ascending order
+    # Store that query in a variable
+    # It will be a list of instances
+    # Each instance has methods and attributes
+    # Return items in ascending order
+    # As a list of dictionaries
+    # Need to use jsonify on the list
+    # Loop through each query, turning into dictionary
+    # Then appending to list
+
+    sort_by = request.args.get("sort") # If user has requested a sort param, get the value
+    if sort_by:
+        if sort_by == "asc":
+            # Query into the db to get objects by ascending
+            sorted_tasks = Task.query.order_by(Task.title.asc())
+            for task in sorted_tasks:
+                task = task.to_dict()
+                tasks_response.append(task)
+
+            return jsonify(tasks_response)
+        elif sort_by == "desc":
+            sorted_tasks = Task.query.order_by(Task.title.desc())
+            for task in sorted_tasks:
+                task = task.to_dict()
+                tasks_response.append(task)
+
+            return jsonify(tasks_response)
+
     if not tasks:
         return jsonify(tasks_response), 200
 
-    for task in tasks:
-        task = task.to_dict()
-        tasks_response.append(task)
+    if not sort_by: # If no query param given
+        for task in tasks:
+            task = task.to_dict()
+            tasks_response.append(task)
 
-    return jsonify(tasks_response), 200
+        return jsonify(tasks_response), 200
 
 @tasks_bp.route("/<task_id>", methods=["GET"])
 def get_one_task(task_id):
