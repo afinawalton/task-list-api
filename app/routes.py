@@ -1,6 +1,7 @@
 from flask import Blueprint, json, jsonify, request
 from app.models.task import Task
 from app import db
+from datetime import datetime
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
 
@@ -51,14 +52,75 @@ def get_tasks():
 
         return jsonify(tasks_response), 200
 
-@tasks_bp.route("/<task_id>", methods=["GET"])
-def get_one_task(task_id):
+@tasks_bp.route("/<task_id>", methods=["GET", "PUT"])
+def get_or_update_one_task(task_id):
     task = Task.query.get(task_id)
 
     if not task:
         return "", 404
 
-    return {"task": task.to_dict()}, 200
+    if request.method == "GET":
+        return {"task": task.to_dict()}, 200
+    elif request.method == "PUT":
+        request_body = request.get_json()
+
+        if request_body['title']:
+            task.title = request_body['title']
+            
+        if request_body['description']:
+            task.description = request_body['description']
+
+        if request_body['completed_at']:
+            task.completed_at = request_body['completed_at']
+            task.is_complete = True
+            
+        db.session.commit()
+
+        return {"task": task.to_dict()}, 200
+
+@tasks_bp.route("/<task_id>/mark_complete", methods=["POST", "PATCH"])
+def update_task_complete(task_id):
+    task = Task.query.get(task_id)
+
+    if not task:
+        return "", 404
+
+    # Access the task
+    # Mark the task as true
+    # Commit change to db
+    task.is_complete = True
+    task.completed_at = datetime.now()
+    db.session.commit()
+
+    task_response = task.to_dict()
+
+    return {"task": task_response}, 200
+    
+    # Turn task into dictionary in response
+    # Set time to now that test was completed at
+    # How to set a date and time to DateTime column in SQLAlchemy
+
+@tasks_bp.route("/<task_id>/mark_incomplete", methods=["POST", "PATCH"])
+def update_task_incomplete(task_id):
+    task = Task.query.get(task_id)
+
+    if not task:
+        return "", 404
+
+    # Access the task
+    # Mark the task as true
+    # Commit change to db
+    task.is_complete = False
+    task.completed_at = None
+    db.session.commit()
+
+    task_response = task.to_dict()
+
+    return {"task": task_response}, 200
+    
+    # Turn task into dictionary in response
+    # Set time to now that test was completed at
+    # How to set a date and time to DateTime column in SQLAlchemy
 
 @tasks_bp.route("", methods=["POST"])
 def create_task():
@@ -74,8 +136,12 @@ def create_task():
 
     new_task = Task(
         title=request_body['title'],
-        description=request_body['description']
+        description=request_body['description'],
+        completed_at=request_body['completed_at']
     )
+
+    if request_body['completed_at']:
+        new_task.is_complete = True
 
     db.session.add(new_task)
     db.session.commit()
