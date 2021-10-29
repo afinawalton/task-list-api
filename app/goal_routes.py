@@ -1,5 +1,6 @@
 from flask import Blueprint, json, jsonify, request
 from app.models.goal import Goal
+from app.models.task import Task
 from app import db
 from datetime import datetime
 # from dotenv import load_dotenv
@@ -77,3 +78,42 @@ def delete_goal(goal_id):
 
     return {"details":
             f'Goal {goal.goal_id} "{goal.title}" successfully deleted'}, 200
+
+@goals_bp.route("/<goal_id>/tasks", methods=["POST"])
+def create_tasks_for_goal(goal_id):
+    request_body = request.get_json()
+
+    goal = Goal.query.get(goal_id)
+
+    if not goal:
+        return "", 404
+
+    goal.tasks = request_body['task_ids']
+    db.session.commit()
+
+    return goal.to_tasks_dict(), 200
+
+@goals_bp.route("/<goal_id>/tasks", methods=["GET"])
+def get_tasks_for_goal(goal_id):
+    goal = Goal.query.get(goal_id)
+
+    if not goal:
+        return "", 404
+    
+    task_list = []
+
+    for id in goal.tasks:
+        # task = Goal.query.get()
+        task_list.append({
+            "id": task.task_id,
+            "goal_id": goal_id,
+            "title": task.title,
+            "description": task.description,
+            "is_complete": task.is_complete
+        })
+
+    return {
+        "id": goal.goal_id,
+        "title": goal.title,
+        "tasks": task_list
+    }, 200
