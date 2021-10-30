@@ -88,10 +88,16 @@ def create_tasks_for_goal(goal_id):
     if not goal:
         return "", 404
 
-    goal.tasks = request_body['task_ids']
+    for id in request_body['task_ids']:
+        goal.tasks.append(Task.query.get(id))
+
+    # goal.tasks.extend(request_body['task_ids'])
     db.session.commit()
 
-    return goal.to_tasks_dict(), 200
+    return {
+        "id": goal.goal_id,
+        "task_ids": request_body['task_ids']
+    }, 200
 
 @goals_bp.route("/<goal_id>/tasks", methods=["GET"])
 def get_tasks_for_goal(goal_id):
@@ -102,11 +108,10 @@ def get_tasks_for_goal(goal_id):
     
     task_list = []
 
-    for id in goal.tasks:
-        # task = Goal.query.get()
+    for task in goal.tasks:
         task_list.append({
             "id": task.task_id,
-            "goal_id": goal_id,
+            "goal_id": goal.goal_id,
             "title": task.title,
             "description": task.description,
             "is_complete": task.is_complete

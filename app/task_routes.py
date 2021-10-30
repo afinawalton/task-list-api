@@ -13,21 +13,8 @@ tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
 
 @tasks_bp.route("", methods=["GET"])
 def get_tasks():
-    # Query the database to get all tasks
-    # If none exist, return [] 200
     tasks = Task.query.all()
     tasks_response = []
-
-    # If user has given us a query param
-    # Get queries to sort by ascending order
-    # Store that query in a variable
-    # It will be a list of instances
-    # Each instance has methods and attributes
-    # Return items in ascending order
-    # As a list of dictionaries
-    # Need to use jsonify on the list
-    # Loop through each query, turning into dictionary
-    # Then appending to list
 
     sort_by = request.args.get("sort") # If user has requested a sort param, get the value
     if sort_by:
@@ -64,7 +51,24 @@ def get_or_update_one_task(task_id):
     if not task:
         return "", 404
 
-    return {"task": task.to_dict()}, 200        
+    if not task.goal_id:
+        return {"task": {
+            "id": task.task_id,
+            "title": task.title,
+            "description": task.description,
+            "is_complete": task.is_complete
+        }
+        }, 200 
+
+    return {
+        "task": {
+            "id": task.task_id,
+            "goal_id": task.goal_id,
+            "title": task.title,
+            "description": task.description,
+            "is_complete": task.is_complete
+        }
+        }, 200        
 
 @tasks_bp.route("/<task_id>", methods=["PUT"])
 def update_one_task(task_id):
