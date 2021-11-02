@@ -16,59 +16,32 @@ def get_tasks():
     tasks = Task.query.all()
     tasks_response = []
 
-    sort_by = request.args.get("sort") # If user has requested a sort param, get the value
-    if sort_by:
-        if sort_by == "asc":
-            # Query into the db to get objects by ascending
-            sorted_tasks = Task.query.order_by(Task.title.asc())
-            for task in sorted_tasks:
-                task = task.to_dict()
-                tasks_response.append(task)
-
-            return jsonify(tasks_response)
-        elif sort_by == "desc":
-            sorted_tasks = Task.query.order_by(Task.title.desc())
-            for task in sorted_tasks:
-                task = task.to_dict()
-                tasks_response.append(task)
-
-            return jsonify(tasks_response)
-
-    if not tasks:
-        return jsonify(tasks_response), 200
-
-    if not sort_by: # If no query param given
+    sort_by = request.args.get("sort")
+    if not sort_by:
         for task in tasks:
             task = task.to_dict()
             tasks_response.append(task)
+    if sort_by == "asc":
+        sorted_tasks = Task.query.order_by(Task.title.asc())
+        for task in sorted_tasks:
+            task = task.to_dict()
+            tasks_response.append(task)
+    elif sort_by == "desc":
+        sorted_tasks = Task.query.order_by(Task.title.desc())
+        for task in sorted_tasks:
+            task = task.to_dict()
+            tasks_response.append(task)
 
-        return jsonify(tasks_response), 200
+    return jsonify(tasks_response), 200
 
 @tasks_bp.route("/<task_id>", methods=["GET"])
-def get_or_update_one_task(task_id):
+def get_one_task(task_id):
     task = Task.query.get(task_id)
 
     if not task:
         return "", 404
 
-    if not task.goal_id:
-        return {"task": {
-            "id": task.task_id,
-            "title": task.title,
-            "description": task.description,
-            "is_complete": task.is_complete
-        }
-        }, 200 
-
-    return {
-        "task": {
-            "id": task.task_id,
-            "goal_id": task.goal_id,
-            "title": task.title,
-            "description": task.description,
-            "is_complete": task.is_complete
-        }
-        }, 200        
+    return {"task": task.to_dict()}, 200
 
 @tasks_bp.route("/<task_id>", methods=["PUT"])
 def update_one_task(task_id):
@@ -81,7 +54,7 @@ def update_one_task(task_id):
     if 'title' in request_body:
         task.title = request_body['title']
         
-    if request_body['description']:
+    if 'description' in request_body:
         task.description = request_body['description']
 
     if 'completed_at' in request_body:
@@ -93,7 +66,7 @@ def update_one_task(task_id):
     return {"task": task.to_dict()}, 200
 
 
-@tasks_bp.route("/<task_id>/mark_complete", methods=["POST", "PATCH"])
+@tasks_bp.route("/<task_id>/mark_complete", methods=["PATCH"])
 def update_task_complete(task_id):
     task = Task.query.get(task_id)
 
@@ -102,21 +75,18 @@ def update_task_complete(task_id):
 
     task.is_complete = True
     task.completed_at = datetime.now()
-
+    
     db.session.commit()
 
-    if request.method == "PATCH":
-        requests.post(
-            'https://slack.com/api/chat.postMessage',
-            params={
-                'channel': 'task-notifications',
-                'text': f"Someone just completed the task {task.title}"},
-            headers={'Authorization': f'Bearer {SLACK_API_KEY}'}
-        )
+    requests.post(
+        'https://slack.com/api/chat.postMessage',
+        params={
+            'channel': 'task-notifications',
+            'text': f"Someone just completed the task {task.title}"},
+        headers={'Authorization': f'Bearer {SLACK_API_KEY}'}
+    )
 
-    task_response = task.to_dict()
-
-    return {"task": task_response}, 200
+    return {"task": task.to_dict()}, 200
 
 @tasks_bp.route("/<task_id>/mark_incomplete", methods=["POST", "PATCH"])
 def update_task_incomplete(task_id):
@@ -127,6 +97,7 @@ def update_task_incomplete(task_id):
 
     task.is_complete = False
     task.completed_at = None
+    
     db.session.commit()
 
     task_response = task.to_dict()
@@ -153,9 +124,7 @@ def create_task():
     db.session.add(new_task)
     db.session.commit()
 
-    task_response = new_task.to_dict()
-
-    return jsonify({"task": task_response}), 201
+    return jsonify({"task": new_task.to_dict()}), 201
 
 @tasks_bp.route("/<task_id>", methods=["PUT"])
 def update_task(task_id):
@@ -172,10 +141,8 @@ def update_task(task_id):
         task.description = request_body['description']
 
     db.session.commit()
-
-    task_response = task.to_dict()
     
-    return {"task": task_response}, 200
+    return {"task": task.to_dict()}, 200
 
 @tasks_bp.route("/<task_id>", methods=["DELETE"])
 def delete_task(task_id):

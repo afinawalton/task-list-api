@@ -3,15 +3,11 @@ from app.models.goal import Goal
 from app.models.task import Task
 from app import db
 from datetime import datetime
-# from dotenv import load_dotenv
-# import os
-# import requests
 
 goals_bp = Blueprint("goals", __name__, url_prefix="/goals")
 
 @goals_bp.route("", methods=["GET"])
 def get_goals():
-    # Query into db to get goal
     goals = Goal.query.all()
 
     goals_response = []
@@ -35,13 +31,11 @@ def get_one_goal(goal_id):
 
 @goals_bp.route("", methods=["POST"])
 def create_goal():
-    # Read the request body
     request_body = request.get_json()
 
     if 'title' not in request_body:
         return {"details": "Invalid data"}, 400
 
-    # Create a new goal in the database
     new_goal = Goal(
         title=request_body['title']
     )
@@ -91,7 +85,6 @@ def create_tasks_for_goal(goal_id):
     for id in request_body['task_ids']:
         goal.tasks.append(Task.query.get(id))
 
-    # goal.tasks.extend(request_body['task_ids'])
     db.session.commit()
 
     return {
@@ -105,20 +98,9 @@ def get_tasks_for_goal(goal_id):
 
     if not goal:
         return "", 404
-    
-    task_list = []
-
-    for task in goal.tasks:
-        task_list.append({
-            "id": task.task_id,
-            "goal_id": goal.goal_id,
-            "title": task.title,
-            "description": task.description,
-            "is_complete": task.is_complete
-        })
 
     return {
         "id": goal.goal_id,
         "title": goal.title,
-        "tasks": task_list
+        "tasks": goal.task_list()
     }, 200
