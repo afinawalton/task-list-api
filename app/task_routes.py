@@ -114,11 +114,11 @@ def create_task():
 
     new_task = Task(
         title=request_body['title'],
-        description=request_body['description'],
-        completed_at=request_body['completed_at']
+        description=request_body['description']
     )
 
     if request_body['completed_at']:
+        new_task.completed_at = request_body['completed_at']
         new_task.is_complete = True
 
     db.session.add(new_task)
