@@ -11,8 +11,30 @@ SLACK_API_KEY = os.environ.get('SLACK_API_KEY')
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
 
+@tasks_bp.route("", methods=["POST"])
+def create_task():
+    request_body = request.get_json()
+
+    if 'title' not in request_body or 'description' not in request_body \
+    or 'completed_at' not in request_body:
+        return {"details": "Invalid data"}, 400
+
+    new_task = Task(
+        title=request_body['title'],
+        description=request_body['description']
+    )
+
+    if request_body['completed_at']:
+        new_task.completed_at = request_body['completed_at']
+        new_task.is_complete = True
+
+    db.session.add(new_task)
+    db.session.commit()
+
+    return jsonify({"task": new_task.to_dict()}), 201
+
 @tasks_bp.route("", methods=["GET"])
-def get_tasks():
+def read_tasks():
     tasks = Task.query.all()
     tasks_response = []
 
@@ -35,7 +57,7 @@ def get_tasks():
     return jsonify(tasks_response), 200
 
 @tasks_bp.route("/<task_id>", methods=["GET"])
-def get_one_task(task_id):
+def read_one_task(task_id):
     task = Task.query.get(task_id)
 
     if not task:
@@ -103,28 +125,6 @@ def update_task_incomplete(task_id):
     task_response = task.to_dict()
 
     return {"task": task_response}, 200
-
-@tasks_bp.route("", methods=["POST"])
-def create_task():
-    request_body = request.get_json()
-
-    if 'title' not in request_body or 'description' not in request_body \
-    or 'completed_at' not in request_body:
-        return {"details": "Invalid data"}, 400
-
-    new_task = Task(
-        title=request_body['title'],
-        description=request_body['description']
-    )
-
-    if request_body['completed_at']:
-        new_task.completed_at = request_body['completed_at']
-        new_task.is_complete = True
-
-    db.session.add(new_task)
-    db.session.commit()
-
-    return jsonify({"task": new_task.to_dict()}), 201
 
 @tasks_bp.route("/<task_id>", methods=["PUT"])
 def update_task(task_id):
