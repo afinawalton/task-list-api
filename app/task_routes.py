@@ -9,7 +9,12 @@ import requests
 load_dotenv()
 SLACK_API_KEY = os.environ.get('SLACK_API_KEY')
 
+main_bp = Blueprint("index", __name__)
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
+
+@main_bp.route("/", methods=["GET"])
+def show_main_page():
+    return "<h1 style='font-family: sans-serif'>Please visit /tasks or /goals to see Tasks and Goals.</h1>"
 
 @tasks_bp.route("", methods=["POST"])
 def create_task():
