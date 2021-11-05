@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+        <title>Tasks</title>
+    </head>
+    <body>
+        <header>
+            <h1>Tasks</h1>
+            {% if task %}
+            <h2>Task "{{ task.title }}" successfully created: </h2>
+            <ul>
+                <li><b>Description:</b>{{ task.description }}</li>
+                <li>{{ task.is_complete }}</li>
+            </ul>
+            {% endif %}
+        </header>
+        <main>
+            {% if tasks_response %}
+            {% for task in tasks_response %}
+            <article class="task">
+                <h2 class="taskName">{{ task.title }}</h2>
+                <ul class="task_details">
+                    <li class="id"><b>ID:</b><br>{{ task.id }} </li>
+                    <li class="description"><b>Description:</b><br>{{ task.description }}</li>
+                    {% if task.is_complete %}
+                    <li class="complete_status"><b>Completed:</b> ✅</li>
+                    {% else %}
+                    <li class="complete_status"><b>Completed:</b> ❌</li>
+                    {% endif %}
+                </ul>
+            </article>
+            {% endfor %}
+            {% endif %}
+        </main>
+    </body>
+</html>

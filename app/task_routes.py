@@ -1,4 +1,4 @@
-from flask import Blueprint, json, jsonify, request
+from flask import Blueprint, json, jsonify, request, render_template
 from app.models.task import Task
 from app import db
 from datetime import datetime
@@ -32,7 +32,8 @@ def get_tasks():
             task = task.to_dict()
             tasks_response.append(task)
 
-    return jsonify(tasks_response), 200
+    return render_template('tasks/all_tasks.html', tasks_response=tasks_response)
+    # return jsonify(tasks_response), 200
 
 @tasks_bp.route("/<task_id>", methods=["GET"])
 def get_one_task(task_id):
@@ -124,7 +125,7 @@ def create_task():
     db.session.add(new_task)
     db.session.commit()
 
-    return jsonify({"task": new_task.to_dict()}), 201
+    return render_template('tasks/all_tasks.html', task=new_task)
 
 @tasks_bp.route("/<task_id>", methods=["PUT"])
 def update_task(task_id):
